@@ -1,22 +1,13 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('layout')
 
-        <title>Print server</title>
+@section('title', 'Főoldal')
 
-        <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css?family=Raleway:100,600" rel="stylesheet" type="text/css">
-    </head>
-    <body>
-        <div class="flex-center position-ref full-height">
-            <div class="content">
-                <div class="title m-b-md">
-                    Print server
-                </div>
-            </div>
-        </div>
-    </body>
-</html>
+@section('content')
+    <h2>Nyomtatók:</h2>
+    <ul>
+        @foreach ($printers as $printer)
+            <li>{{ $printer->getName() }}</li>
+            <li>{{ dd($printer) }}</li>
+        @endforeach
+    </ul>
+@endsection
