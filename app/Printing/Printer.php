@@ -2,65 +2,54 @@
 
 namespace App\Printing;
 
-use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Filesystem\Filesystem;
-use Symfony\Component\Process\Process;
+use Smalot\Cups\Model\PrinterInterface;
 
 class Printer
 {
-    /** @var array */
-    protected $config;
+    protected $sn;
 
-    /** @var Factory */
-    protected $viewFactory;
+    protected $name;
 
-    /** @var Filesystem */
-    protected $filesystem;
+    protected $type;
+
+    protected $cupsURI;
+
+    protected $ip;
 
     /**
      * PrintManager constructor.
-     * @param Repository $config
-     * @param Factory $viewFactory
-     * @param Filesystem $filesystem
+     * @param PrinterInterface $cupsPrinter
+     * @param Checker $checker
+     * @throws \Exception
      */
     public function __construct(
-        Repository $config,
-        Factory $viewFactory,
-        Filesystem $filesystem
+        PrinterInterface $cupsPrinter,
+        Checker $checker
     ) {
-        $this->filesystem = $filesystem;
-        $this->viewFactory = $viewFactory;
-        $this->config = $config->get('services.printer');
+        $this->fillAttributes($cupsPrinter, $checker);
+    }
+
+    public function getSn()
+    {
+        return $this->sn;
     }
 
     /**
-     * @param $file
-     * @return bool
+     * @param PrinterInterface $cups
+     * @param Checker $snmp
      * @throws \Exception
      */
-    public function printFile($file)
+    protected function fillAttributes(PrinterInterface $cups, Checker $snmp)
     {
-        if ($file instanceof \SplFileInfo) {
-            $file = $file->getRealPath();
-        }
-
-        if (!is_file($file)) {
-            throw new \InvalidArgumentException("File ($file) does not exists");
-        }
-
-        $printer = $this->config['printer_name'];
-
-        $process = new Process(
-            sprintf('lp -d %s %s', $printer, $file)
+        $this->name = $cups->getName();
+        $this->cupsURI = $cups->getUri();
+        $this->ip = parse_url(
+            $cups->getAttributes()['device-uri'][0],
+            PHP_URL_HOST
         );
 
-        $process->run();
+        $snmp->setIPAddress($this->ip);
 
-        if ($process->isSuccessful()) {
-            return true;
-        } else {
-            throw new \Exception($process->getErrorOutput());
-        }
+        $this->sn = $snmp->getSerialNumber();
     }
 }
