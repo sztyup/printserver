@@ -1,7 +1,8 @@
 <?php
 
-use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 
+/** @var Router $router */
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -13,6 +14,12 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+$router->group([
+    'middleware' => 'api'
+], function (Router $router) {
+    $router->get('printers', 'ApiController@listPrinters');
+
+    $router->get('printers/{printer}', 'ApiController@getPrinter');
+
+    $router->get('status', 'ApiController@status');
 });
