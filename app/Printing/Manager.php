@@ -2,13 +2,18 @@
 
 namespace App\Printing;
 
+use Doctrine\ORM\EntityManager;
 use Illuminate\Filesystem\FilesystemManager;
+use Illuminate\Support\Collection;
 use Smalot\Cups\Manager\JobManager;
 use Smalot\Cups\Manager\PrinterManager;
 use Smalot\Cups\Model\Job;
+use App\Entities\Printer as PrinterEntity;
 
 class Manager
 {
+    protected $em;
+
     protected $storage;
 
     protected $printers;
@@ -29,30 +34,41 @@ class Manager
      * @param Checker $checker
      * @param PrinterManager $cupsManager
      * @param JobManager $jobManager
+     * @param EntityManager $em
      * @throws \Exception
      */
     public function __construct(
         FilesystemManager $filesystemManager,
         Checker $checker,
         PrinterManager $cupsManager,
-        JobManager $jobManager
+        JobManager $jobManager,
+        EntityManager $em
     ) {
+        $this->em = $em;
         $this->cups = $cupsManager;
         $this->checker = $checker;
         $this->storage = $filesystemManager->drive();
         $this->jobManager = $jobManager;
 
-        $this->init($cupsManager, $checker);
+        $this->load();
+    }
+
+    protected function load()
+    {
+        $this->printers = Collection::make(
+            $this->em->getRepository(PrinterEntity::class)->findAll()
+        );
     }
 
     /**
      * @param PrinterManager $cups
      * @param Checker $snmp
+     * @return array
      * @throws \Exception
      */
-    protected function init(PrinterManager $cups, Checker $snmp)
+    public function discover()
     {
-        $printers = $cups->getList([
+        $printers = $this->cups->getList([
             'printer-uri-supported',
             'printer-name',
             'printer-state',
@@ -63,9 +79,34 @@ class Manager
             'device-uri'
         ]);
 
+        /** @var Printer[] $result */
+        $result = [];
+
         foreach ($printers as $printer) {
-            $this->printers[] = new Printer($printer, $snmp);
+            $result[$new->getSn()] = $new = new Printer($printer, $this->checker);
         }
+
+        $repo = $this->em->getRepository(PrinterEntity::class);
+        foreach ($result as $key => $printer) {
+            $entity = $repo->findOneBy([
+                'sn' => $printer->getSn()
+            ]);
+
+            if ($entity == null) {
+                $entity = PrinterEntity::create([
+                    'sn' => $printer->getSn(),
+                    'type' => $printer->getType()
+                ]);
+
+                $this->em->persist($entity);
+            } else {
+                unset($result[$key]);
+            }
+        }
+
+        $this->em->flush();
+
+        return $result;
     }
 
     /**

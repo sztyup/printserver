@@ -2,6 +2,7 @@
 
 namespace App\Printing;
 
+use Carbon\CarbonInterval;
 use Exception;
 
 class Checker
@@ -92,6 +93,8 @@ class Checker
         if ($timeout !== null) {
             $this->setMaxTimeout($timeout);
         }
+
+        snmp_set_valueretrieval(SNMP_VALUE_OBJECT | SNMP_VALUE_PLAIN);
     }
 
     /**
@@ -173,7 +176,7 @@ class Checker
      * or returns false if call failed
      *
      * @param string $snmpObjectId
-     * @return int|string|boolean
+     * @return \stdClass
      * @throws Exception if IP address is not set
      * @throws Exception if $snmpObjectId is not in string format
      */
@@ -229,16 +232,26 @@ class Checker
      * or returns false if call failed
      *
      * @param string $snmpObjectId
-     * @return string|boolean
+     * @return mixed
      * @throws Exception
      */
     public function getSNMPString($snmpObjectId)
     {
         $result = $this->get($snmpObjectId);
 
-        return ($result !== false)
-            ? str_replace('"', '', $result)
-            : false;
+        switch ($result->type) {
+            case SNMP_OCTET_STR:
+                return $result->value;
+            case SNMP_TIMETICKS:
+                return (int) ($result->value / 100);
+            case SNMP_INTEGER:
+            case SNMP_COUNTER:
+            case SNMP_COUNTER64:
+            case SNMP_UNSIGNED:
+                return (int) $result->value;
+            default:
+                throw new Exception('Unrecognised snmp type: ' . $result->type);
+        }
     }
 
     /**
@@ -267,6 +280,14 @@ class Checker
         }
 
         return false;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getUptime()
+    {
+        return $this->getSNMPString(self::SNMP_PRINTER_RUNNING_TIME);
     }
 
     /**

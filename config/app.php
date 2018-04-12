@@ -151,6 +151,9 @@ return [
          * Package Service Providers...
          */
 
+        LaravelDoctrine\Extensions\GedmoExtensionsServiceProvider::class,
+        LaravelDoctrine\Extensions\BeberleiExtensionsServiceProvider::class,
+
         /*
          * Application Service Providers...
          */

@@ -27,7 +27,6 @@ class WebController extends Controller
      */
     public function index(Manager $manager)
     {
-        dd($manager->getPrinters()[0]->getSn());
         return $this->view('index', [
             'printers' => $manager->getPrinters()[0]->getSn()
         ]);
