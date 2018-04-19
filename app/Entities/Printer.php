@@ -21,14 +21,14 @@ class Printer extends Entity
      *
      * @ORM\Column(type="string")
      */
-    protected $name;
+    protected $label;
 
     /**
      * @var string
      *
      * @ORM\Column(type="string")
      */
-    protected $type;
+    protected $cupsUri;
 
     /**
      * @return string
@@ -52,18 +52,18 @@ class Printer extends Entity
     /**
      * @return string
      */
-    public function getName(): string
+    public function getLabel()
     {
-        return $this->name;
+        return $this->label;
     }
 
     /**
-     * @param string $name
+     * @param string $label
      * @return Printer
      */
-    public function setName(string $name): Printer
+    public function setLabel(string $label): Printer
     {
-        $this->name = $name;
+        $this->label = $label;
 
         return $this;
     }
@@ -71,18 +71,18 @@ class Printer extends Entity
     /**
      * @return string
      */
-    public function getType(): string
+    public function getCupsUri()
     {
-        return $this->type;
+        return $this->cupsUri;
     }
 
     /**
-     * @param string $type
+     * @param string $cupsUri
      * @return Printer
      */
-    public function setType(string $type): Printer
+    public function setCupsUri(string $cupsUri): Printer
     {
-        $this->type = $type;
+        $this->cupsUri = $cupsUri;
 
         return $this;
     }

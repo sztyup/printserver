@@ -4,8 +4,9 @@ namespace App\Printing;
 
 use Carbon\CarbonInterval;
 use Smalot\Cups\Model\PrinterInterface;
+use App\Entities\Printer as PrinterEntity;
 
-class Printer
+class Printer implements \JsonSerializable
 {
     /**
      * @var string Serial number
@@ -37,17 +38,24 @@ class Printer
      */
     protected $uptime;
 
+    /** @var PrinterEntity */
+    protected $entity;
+
     /**
      * PrintManager constructor.
      * @param PrinterInterface $cupsPrinter
      * @param Checker $checker
+     * @param PrinterEntity|null $entity
      * @throws \Exception
      */
     public function __construct(
         PrinterInterface $cupsPrinter,
-        Checker $checker
+        Checker $checker,
+        PrinterEntity $entity = null
     ) {
         $this->fillAttributes($cupsPrinter, $checker);
+
+        $this->entity = $entity;
     }
 
     public function getSn()
@@ -58,6 +66,25 @@ class Printer
     public function getType()
     {
         return $this->type;
+    }
+
+    public function getName()
+    {
+        if (isset($this->entity) && !empty($this->entity->getLabel())) {
+            return $this->entity->getLabel() . ' (' . $this->name . ')';
+        }
+
+        return $this->name;
+    }
+
+    public function getCupsUri()
+    {
+        return $this->cupsURI;
+    }
+
+    public function getEntity()
+    {
+        return $this->entity;
     }
 
     /**
@@ -79,5 +106,23 @@ class Printer
         $this->sn = $snmp->getFactoryId();
 
         $this->uptime = $snmp->getUptime();
+    }
+
+    /**
+     * Specify data which should be serialized to JSON
+     * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'name' => $this->getName(),
+            'cupsURI' => $this->getCupsUri(),
+            'ip' => $this->ip,
+            'sn' => $this->getSn(),
+            'uptime' => $this->uptime
+        ];
     }
 }

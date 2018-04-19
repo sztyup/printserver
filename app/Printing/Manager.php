@@ -2,6 +2,7 @@
 
 namespace App\Printing;
 
+use Carbon\Carbon;
 use Doctrine\ORM\EntityManager;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Collection;
@@ -12,12 +13,16 @@ use App\Entities\Printer as PrinterEntity;
 
 class Manager
 {
+    /** @var EntityManager */
     protected $em;
 
+    /** @var \Illuminate\Contracts\Filesystem\Filesystem */
     protected $storage;
 
+    /** @var Printer[]|Collection */
     protected $printers;
 
+    /** @var Checker */
     protected $checker;
 
     /** @var PrinterManager */
@@ -26,7 +31,7 @@ class Manager
     /** @var JobManager */
     protected $jobManager;
 
-    const USERNAME_TO_PRINTER = 'printserver';
+    const DEFAULT_USERNAME = 'printserver';
 
     /**
      * Manager constructor.
@@ -50,20 +55,30 @@ class Manager
         $this->storage = $filesystemManager->drive();
         $this->jobManager = $jobManager;
 
+        $this->discover();
         $this->load();
     }
 
+    /**
+     *
+     */
     protected function load()
     {
         $this->printers = Collection::make(
             $this->em->getRepository(PrinterEntity::class)->findAll()
-        );
+        )->map(function (PrinterEntity $printer) {
+            return new Printer(
+                $this->cups->findByUri($printer->getCupsUri()),
+                $this->checker,
+                $printer
+            );
+        });
     }
 
     /**
-     * @param PrinterManager $cups
-     * @param Checker $snmp
      * @return array
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Exception
      */
     public function discover()
@@ -83,11 +98,12 @@ class Manager
         $result = [];
 
         foreach ($printers as $printer) {
-            $result[$new->getSn()] = $new = new Printer($printer, $this->checker);
+            $result[] = new Printer($printer, $this->checker);
         }
 
         $repo = $this->em->getRepository(PrinterEntity::class);
         foreach ($result as $key => $printer) {
+            /** @var PrinterEntity $entity */
             $entity = $repo->findOneBy([
                 'sn' => $printer->getSn()
             ]);
@@ -95,11 +111,15 @@ class Manager
             if ($entity == null) {
                 $entity = PrinterEntity::create([
                     'sn' => $printer->getSn(),
-                    'type' => $printer->getType()
+                    'type' => $printer->getType() ?? 0,
+                    'cupsUri' => $printer->getCupsUri(),
+                    'label' => 'Unknown printer'
                 ]);
 
                 $this->em->persist($entity);
             } else {
+                $entity->setCupsUri($printer->getCupsUri());
+
                 unset($result[$key]);
             }
         }
@@ -118,22 +138,44 @@ class Manager
         return $this->printers;
     }
 
+    public function getPrinterBySn(string $sn)
+    {
+        return $this->printers->filter(function (Printer $printer) use ($sn) {
+            return $printer->getSn() == $sn;
+        })->first();
+    }
+
     /**
      * @param Printer $printer
      * @param $file
      * @param int $copies
+     * @param string $username
      * @return bool
      */
-    public function print(Printer $printer, $file, $copies = 1)
+    public function printFile(Printer $printer, $file, $copies = 1, $username = self::DEFAULT_USERNAME)
     {
-        $printer = $this->cups->findByUri($printer);
+        $printer = $this->cups->findByUri($printer->getCupsUri());
 
         $job = new Job();
         $job->setName(pathinfo($file, PATHINFO_FILENAME));
-        $job->setUsername(self::USERNAME_TO_PRINTER);
+        $job->setUsername($username);
         $job->setCopies($copies);
-        $job->setPageRanges('1');
         $job->addFile($file);
+        $job->addAttribute('media', 'A4');
+        $job->addAttribute('fit-to-page', true);
+        $job->setSides(Job::SIDES_ONE_SIDED);
+
+        return $this->jobManager->send($printer, $job);
+    }
+
+    public function printText(Printer $printer, $text, $copies = 1, $username = self::DEFAULT_USERNAME)
+    {
+        $printer = $this->cups->findByUri($printer->getCupsUri());
+
+        $job = new Job();
+        $job->setUsername($username);
+        $job->setCopies($copies);
+        $job->addText($text);
         $job->addAttribute('media', 'A4');
         $job->addAttribute('fit-to-page', true);
         $job->setSides(Job::SIDES_ONE_SIDED);
