@@ -4,10 +4,9 @@
 
 @section('content')
     <h2>Nyomtatók:</h2>
-    <ul>
-        @foreach ($printers as $printer)
-            <li>{{ $printer->getName() }}</li>
-            <li>{{ dd($printer) }}</li>
-        @endforeach
-    </ul>
+    @include('datatables::datatable.datatable_html', ['datatable' => $dataTable])
 @endsection
+
+@push('scripts')
+    @include('datatables::datatable.datatable_js', ['datatable' => $dataTable])
+@endpush
