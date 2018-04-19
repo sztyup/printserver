@@ -239,6 +239,10 @@ class Checker
     {
         $result = $this->get($snmpObjectId);
 
+        if ($result === false) {
+            return null;
+        }
+
         switch ($result->type) {
             case SNMP_OCTET_STR:
                 return $result->value;
