@@ -2,7 +2,6 @@
 
 namespace App\Printing;
 
-use Carbon\CarbonInterval;
 use Exception;
 
 class Checker
@@ -46,7 +45,7 @@ class Checker
      * SNMP printer object ids
      */
     const SNMP_PRINTER_FACTORY_ID                     = '.1.3.6.1.2.1.1.1.0';
-    const SNMP_PRINTER_RUNNING_TIME                   = '.1.3.6.1.2.1.1.3.0';   // TODO: Create function to handle this
+    const SNMP_PRINTER_RUNNING_TIME                   = '.1.3.6.1.2.1.1.3.0';
     const SNMP_PRINTER_SERIAL_NUMBER                  = '.1.3.6.1.2.1.43.5.1.1.17.1';
     const SNMP_PRINTER_VENDOR_NAME                    = '.1.3.6.1.2.1.43.9.2.1.8.1.1';
     const SNMP_NUMBER_OF_PRINTED_PAPERS               = '.1.3.6.1.2.1.43.10.2.1.4.1.1';
@@ -82,7 +81,7 @@ class Checker
      */
     public function __construct($ip = null, $timeout = null)
     {
-        if(!extension_loaded('snmp')) {
+        if (!extension_loaded('snmp')) {
             throw new Exception('SNMP extension is not loaded');
         }
 
@@ -287,6 +286,7 @@ class Checker
     }
 
     /**
+     * @return int
      * @throws Exception
      */
     public function getUptime()

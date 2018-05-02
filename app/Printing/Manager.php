@@ -2,7 +2,6 @@
 
 namespace App\Printing;
 
-use Carbon\Carbon;
 use Doctrine\ORM\EntityManager;
 use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Support\Collection;
