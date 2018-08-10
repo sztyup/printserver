@@ -14,13 +14,6 @@ class Printer extends Entity
      *
      * @ORM\Column(type="string")
      */
-    protected $sn;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(type="string")
-     */
     protected $label;
 
     /**
@@ -29,25 +22,6 @@ class Printer extends Entity
      * @ORM\Column(type="string")
      */
     protected $cupsUri;
-
-    /**
-     * @return string
-     */
-    public function getSn(): string
-    {
-        return $this->sn;
-    }
-
-    /**
-     * @param string $sn
-     * @return Printer
-     */
-    public function setSn(string $sn): Printer
-    {
-        $this->sn = $sn;
-
-        return $this;
-    }
 
     /**
      * @return string

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Http\Client\HttpClient;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Smalot\Cups\Transport\Client;
 
@@ -15,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+
     }
 
     /**

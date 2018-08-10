@@ -40,35 +40,83 @@ class Entity
      * Methods for the shared properties
      */
 
+    /**
+     * @return int
+     */
     public function getId()
     {
         return $this->id;
     }
 
+    /**
+     * @return Carbon
+     */
     public function getUpdatedAt(): Carbon
     {
+        if ($this->updatedAt instanceof \DateTime) {
+            $this->updatedAt = Carbon::instance($this->updatedAt);
+        }
+
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(Carbon $updatedAt): Entity
+    /**
+     * @param Carbon $updatedAt
+     *
+     * @return static
+     */
+    public function setUpdatedAt($updatedAt)
     {
-        $this->updatedAt = $updatedAt;
+        $value = null;
+
+        if ($updatedAt instanceof Carbon)
+            $value = $updatedAt;
+        elseif (is_string($updatedAt))
+            $value = Carbon::createFromTimeString($updatedAt);
+
+        $this->updatedAt = $value;
+
         return $this;
     }
 
+    /**
+     * @return Carbon
+     */
     public function getCreatedAt(): Carbon
     {
+        if ($this->createdAt instanceof \DateTime) {
+            $this->createdAt = Carbon::instance($this->createdAt);
+        }
+
         return $this->createdAt;
     }
 
-    public function setCreatedAt(Carbon $createdAt)
+    /**
+     * @param Carbon $createdAt
+     *
+     * @return static
+     */
+    public function setCreatedAt($createdAt)
     {
-        $this->createdAt = $createdAt;
+        $value = null;
+
+        if ($createdAt instanceof Carbon)
+            $value = $createdAt;
+        elseif (is_string($createdAt))
+            $value = Carbon::createFromTimeString($createdAt);
+
+        $this->createdAt = $value;
+
         return $this;
     }
 
 
-    public static function create(?array $attributes)
+    /**
+     * @param array|null $attributes
+     *
+     * @return static
+     */
+    public static function create(array $attributes = [])
     {
         $entity = new static();
 
@@ -87,14 +135,20 @@ class Entity
         return $entity;
     }
 
-    public function update(array $attributes)
+    public function update(array $attributes = null)
     {
+        if (is_null($attributes)) {
+            $this->setUpdatedAt(Carbon::now());
+
+            return $this;
+        }
+
         foreach ($attributes as $field => $value) {
             if (is_null($value)) {
                 continue;
             }
 
-            $setter = 'set' . Str::camel($field);
+            $setter = 'set' . Str::studly($field);
 
             if (method_exists($this, $setter)) {
                 $this->{$setter}($value);

@@ -9,11 +9,6 @@ use App\Entities\Printer as PrinterEntity;
 class Printer implements \JsonSerializable
 {
     /**
-     * @var string Serial number
-     */
-    protected $sn;
-
-    /**
      * @var string Name of the printer
      */
     protected $name;
@@ -38,7 +33,19 @@ class Printer implements \JsonSerializable
      */
     protected $uptime;
 
-    /** @var PrinterEntity */
+    /**
+     * @var string
+     */
+    protected $blackToner;
+
+    /**
+     * @var string
+     */
+    protected $printerState;
+
+    /**
+     * @var PrinterEntity
+     */
     protected $entity;
 
     /**
@@ -48,27 +55,24 @@ class Printer implements \JsonSerializable
      * @param PrinterEntity|null $entity
      * @throws \Exception
      */
-    public function __construct(
-        PrinterInterface $cupsPrinter,
-        Checker $checker,
-        PrinterEntity $entity = null
-    ) {
+    public function __construct(PrinterInterface $cupsPrinter, Checker $checker, PrinterEntity $entity = null) {
         $this->fillAttributes($cupsPrinter, $checker);
 
         $this->entity = $entity;
     }
 
-    public function getSn()
-    {
-        return $this->sn;
-    }
-
-    public function getType()
+    /**
+     * @return string
+     */
+    public function getType(): ?string
     {
         return $this->type;
     }
 
-    public function getName()
+    /**
+     * @return string
+     */
+    public function getName(): string
     {
         if (isset($this->entity) && !empty($this->entity->getLabel())) {
             return $this->entity->getLabel() . ' (' . $this->name . ')';
@@ -77,11 +81,33 @@ class Printer implements \JsonSerializable
         return $this->name;
     }
 
-    public function getCupsUri()
+    /**
+     * @return string
+     */
+    public function getCupsUri(): ?string
     {
         return $this->cupsURI;
     }
 
+    /**
+     * @return string
+     */
+    public function getBlackToner(): ?string
+    {
+        return $this->blackToner;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrinterState(): ?string
+    {
+        return $this->printerState;
+    }
+
+    /**
+     * @return PrinterEntity|null
+     */
     public function getEntity()
     {
         return $this->entity;
@@ -96,15 +122,13 @@ class Printer implements \JsonSerializable
     {
         $this->name = $cups->getName();
         $this->cupsURI = $cups->getUri();
-        $this->ip = parse_url(
-            $cups->getAttributes()['device-uri'][0],
-            PHP_URL_HOST
-        );
+        $this->ip = parse_url($cups->getAttributes()['device-uri'][0], PHP_URL_HOST); // Maybe wrong but idk
+        $this->printerState = $cups->getAttributes()['printer-state'][0];
 
         $snmp->setIPAddress($this->ip);
 
-        $this->sn = $snmp->getFactoryId();
-
+        $this->type = $snmp->getTypeOfPrinter();
+        $this->blackToner = $snmp->getBlackTonerLevel();
         $this->uptime = $snmp->getUptime();
     }
 
@@ -118,11 +142,15 @@ class Printer implements \JsonSerializable
     public function jsonSerialize()
     {
         return [
-            'name' => $this->getName(),
-            'cupsURI' => $this->getCupsUri(),
+            'id' => $this->entity->getId(),
+            'label' => $this->entity->getLabel(),
+            'name' => $this->name,
+            'type' => $this->type,
+            'cupsURI' => $this->cupsURI,
             'ip' => $this->ip,
-            'sn' => $this->getSn(),
-            'uptime' => $this->uptime
+            'uptime' => $this->uptime,
+            'ink' => $this->blackToner,
+            'busy' => $this->printerState == 'idle'
         ];
     }
 }

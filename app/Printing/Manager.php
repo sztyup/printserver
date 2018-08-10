@@ -59,18 +59,43 @@ class Manager
     }
 
     /**
-     *
+     * @return Printer
+     * @throws \Exception
+     */
+    private function fakePrinter()
+    {
+        $testPrinterEntity = new PrinterEntity();
+        $testPrinterEntity->setLabel('Test');
+        $testPrinterEntity->setCupsUri('http://localhost:631');
+
+        $testPrinter = new \Smalot\Cups\Model\Printer();
+        $testPrinter->setUri($testPrinterEntity->getCupsUri());
+        $testPrinter->setAttribute('device-uri', 'http://localhost:8888');
+
+        return new Printer($testPrinter, $this->checker, $testPrinterEntity);
+    }
+
+    /**
+     * @throws \Exception
      */
     protected function load()
     {
         $this->printers = Collection::make(
             $this->em->getRepository(PrinterEntity::class)->findAll()
         )->map(function (PrinterEntity $printer) {
+            $printerInterface = $this->cups->findByUri($printer->getCupsUri());
+
+            if ($printerInterface == false) {
+                return null;
+            }
+
             return new Printer(
-                $this->cups->findByUri($printer->getCupsUri()),
+                $printerInterface,
                 $this->checker,
                 $printer
             );
+        })->filter(function ($printer) {
+            return !is_null($printer);
         });
     }
 
@@ -101,16 +126,15 @@ class Manager
         }
 
         $repo = $this->em->getRepository(PrinterEntity::class);
+
         foreach ($result as $key => $printer) {
             /** @var PrinterEntity $entity */
             $entity = $repo->findOneBy([
-                'sn' => $printer->getSn()
+                'cupsUri' => $printer->getCupsUri()
             ]);
 
             if ($entity == null) {
                 $entity = PrinterEntity::create([
-                    'sn' => $printer->getSn(),
-                    'type' => $printer->getType() ?? 0,
                     'cupsUri' => $printer->getCupsUri(),
                     'label' => 'Unknown printer'
                 ]);
@@ -137,10 +161,14 @@ class Manager
         return $this->printers;
     }
 
-    public function getPrinterBySn(string $sn)
+    /**
+     * @param string $cupsUri
+     * @return mixed
+     */
+    public function getPrinterByCupsUri(string $cupsUri)
     {
-        return $this->printers->filter(function (Printer $printer) use ($sn) {
-            return $printer->getSn() == $sn;
+        return $this->printers->filter(function (Printer $printer) use ($cupsUri) {
+            return $printer->getCupsUri() == $cupsUri;
         })->first();
     }
 
@@ -167,6 +195,13 @@ class Manager
         return $this->jobManager->send($printer, $job);
     }
 
+    /**
+     * @param Printer $printer
+     * @param $text
+     * @param int $copies
+     * @param string $username
+     * @return bool
+     */
     public function printText(Printer $printer, $text, $copies = 1, $username = self::DEFAULT_USERNAME)
     {
         $printer = $this->cups->findByUri($printer->getCupsUri());

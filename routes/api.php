@@ -14,12 +14,9 @@ use Illuminate\Routing\Router;
 |
 */
 
-$router->group([
-    'middleware' => 'api'
-], function (Router $router) {
-    $router->get('printers', 'ApiController@listPrinters');
+$router->group(['middleware' => 'api', 'prefix' => 'printers', 'as' => 'printers'], function (Router $router) {
+    $router->get('/', 'ApiController@listPrinters');
+    $router->get('/{printer}/status', 'ApiController@getPrinter');
 
-    $router->get('printers/{printer}', 'ApiController@getPrinter');
-
-    $router->get('status', 'ApiController@status');
+    $router->post('/{printer}/print', 'ApiController@printWith');
 });
