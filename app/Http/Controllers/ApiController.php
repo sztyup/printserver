@@ -38,8 +38,16 @@ class ApiController extends Controller
      */
     public function printWith(Printer $printer, PrintFileRequest $request, Manager $manager)
     {
-        $manager->printFile($manager->getPrinterByCupsUri($printer->getCupsUri()), $request->file('pdf'), $request->get('copies'));
+        $p = $manager->getPrinterByCupsUri($printer->getCupsUri());
 
-        return response();
+        if (is_null($p)) {
+            abort(400);
+        }
+        
+        $pdf = $request->file('pdf');
+
+        $success = $manager->printFile($p, $pdf, $request->get('copies'));
+
+        return response('', $success ? 200 : 500);
     }
 }
