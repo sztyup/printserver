@@ -21,9 +21,6 @@ class Manager
     /** @var Printer[]|Collection */
     protected $printers;
 
-    /** @var Checker */
-    protected $checker;
-
     /** @var PrinterManager */
     protected $cups;
 
@@ -35,7 +32,6 @@ class Manager
     /**
      * Manager constructor.
      * @param FilesystemManager $filesystemManager
-     * @param Checker $checker
      * @param PrinterManager $cupsManager
      * @param JobManager $jobManager
      * @param EntityManager $em
@@ -43,14 +39,12 @@ class Manager
      */
     public function __construct(
         FilesystemManager $filesystemManager,
-        Checker $checker,
         PrinterManager $cupsManager,
         JobManager $jobManager,
         EntityManager $em
     ) {
         $this->em = $em;
         $this->cups = $cupsManager;
-        $this->checker = $checker;
         $this->storage = $filesystemManager->drive();
         $this->jobManager = $jobManager;
 
@@ -72,7 +66,7 @@ class Manager
         $testPrinter->setUri($testPrinterEntity->getCupsUri());
         $testPrinter->setAttribute('device-uri', 'http://localhost:8888');
 
-        return new Printer($testPrinter, $this->checker, $testPrinterEntity);
+//        return new Printer($testPrinter, $this->checker, $testPrinterEntity);
     }
 
     /**

@@ -1,14 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Timestampable\Timestampable;
+use Gedmo\Timestampable\Traits\Timestampable as TimestampableTrait;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\PrinterRepository")
  */
-class Printer extends Entity
+class Printer implements Timestampable
 {
+    use TimestampableTrait;
+
+    /**
+     * @var int id
+     *
+     * @ORM\Column(type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="IDENTITY")
+     */
+    protected $id;
+
     /**
      * @var string
      *
@@ -26,38 +41,32 @@ class Printer extends Entity
     /**
      * @return string
      */
-    public function getLabel()
+    public function getLabel(): ?string
     {
         return $this->label;
     }
 
     /**
-     * @param string $label
-     * @return Printer
+     * @param string|null $label
      */
-    public function setLabel(string $label): Printer
+    public function setLabel(?string $label): void
     {
         $this->label = $label;
-
-        return $this;
     }
 
     /**
      * @return string
      */
-    public function getCupsUri()
+    public function getCupsUri(): ?string
     {
         return $this->cupsUri;
     }
 
     /**
      * @param string $cupsUri
-     * @return Printer
      */
-    public function setCupsUri(string $cupsUri): Printer
+    public function setCupsUri(?string $cupsUri): void
     {
         $this->cupsUri = $cupsUri;
-
-        return $this;
     }
 }

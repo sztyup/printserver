@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -8,8 +10,17 @@ use Illuminate\Contracts\Auth\Authenticatable;
 /**
  * @ORM\Entity
  */
-class User extends Entity implements Authenticatable
+class User implements Authenticatable
 {
+    /**
+     * @var int id
+     *
+     * @ORM\Column(type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="IDENTITY")
+     */
+    protected $id;
+
     /**
      * @var string
      *
